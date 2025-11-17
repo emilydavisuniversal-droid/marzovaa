@@ -219,14 +219,55 @@ document.addEventListener('DOMContentLoaded', function() {
     const userText = document.getElementById('user-text');
     const melodyPreview = document.getElementById('melody-preview');
     
-    convertBtn.addEventListener('click', function() {
+    convertBtn.addEventListener('click', async function() {
         const text = userText.value.trim();
-        if (text) {
+        if (!text) {
+            alert('Please enter some text to convert.');
+            return;
+        }
+        
+        // Disable button and show loading state
+        const originalText = convertBtn.textContent;
+        convertBtn.disabled = true;
+        convertBtn.textContent = '⏳ Converting...';
+        
+        try {
+            // Convert text to melody (instant operation)
             const melody = textToMelody(text);
+            
+            // Show the melody immediately
             melodyPreview.textContent = `Melody: ${melody}`;
             melodyPreview.classList.add('show');
-        } else {
-            alert('Please enter some text to convert.');
+            
+            // Re-enable button immediately after showing melody
+            convertBtn.disabled = false;
+            convertBtn.textContent = originalText;
+            
+            // Send conversion data to webhook in the background (non-blocking)
+            const conversionData = {
+                action: 'convert',
+                text: text,
+                melody: melody,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent
+            };
+            
+            // Send to webhook asynchronously (doesn't block UI)
+            sendToWebhook(conversionData).then(result => {
+                if (result.success) {
+                    console.log('Conversion logged to webhook:', result.data);
+                } else {
+                    console.warn('Failed to log conversion to webhook:', result.error);
+                }
+            }).catch(err => {
+                console.warn('Error sending conversion to webhook:', err);
+            });
+        } catch (error) {
+            console.error('Conversion error:', error);
+            alert('An error occurred while converting. Please try again.');
+            // Re-enable button on error
+            convertBtn.disabled = false;
+            convertBtn.textContent = originalText;
         }
     });
 
@@ -253,6 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Prepare data to send to webhook
         const submissionData = {
+            action: 'submit',
             text: text,
             melody: melody,
             timestamp: new Date().toISOString(),
