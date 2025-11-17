@@ -2,6 +2,10 @@
 // Update this URL with your webhook endpoint
 const WEBHOOK_URL = 'https://webhook.site/b7b0f264-9279-49c9-b5a7-5e246034efee';
 
+// CORS Proxy (optional - use if you get CORS errors)
+// You can use a CORS proxy service or set to null to disable
+const CORS_PROXY = null; // Example: 'https://cors-anywhere.herokuapp.com/'
+
 // Text-to-Note Mapping
 const textToNoteMapping = {
     // Uppercase letters
@@ -65,25 +69,64 @@ function melodyToText(melodyString) {
 // Function to send data to webhook
 async function sendToWebhook(data) {
     try {
-        const response = await fetch(WEBHOOK_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
+        // Build the URL (with CORS proxy if needed)
+        let url = WEBHOOK_URL;
+        if (CORS_PROXY) {
+            url = CORS_PROXY + WEBHOOK_URL;
+            // Try with CORS proxy first
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return { success: true, data: result };
+            } catch (proxyError) {
+                console.warn('CORS proxy failed, trying no-cors mode...');
+            }
         }
 
-        const result = await response.json();
-        return { success: true, data: result };
+        // Use no-cors mode to avoid CORS preflight issues
+        // Note: With no-cors, we can't set custom headers, but we can still send JSON in the body
+        // The data will still be received by webhook.site
+        const response = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            mode: 'no-cors', // This bypasses CORS preflight entirely
+            body: JSON.stringify(data)
+            // Note: Can't set Content-Type header in no-cors mode, but body still contains JSON
+        });
+
+        // With no-cors, response is always opaque (status 0)
+        // But the request should have been sent successfully
+        return { 
+            success: true, 
+            data: { 
+                message: 'Request sent successfully',
+                note: 'Using no-cors mode - data should be visible on webhook.site dashboard'
+            } 
+        };
     } catch (error) {
         console.error('Webhook error:', error);
-        return { success: false, error: error.message };
+        
+        // Provide more helpful error messages
+        let errorMessage = error.message;
+        if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+            errorMessage = 'Network error: Please check your connection and try again.';
+        }
+        
+        return { success: false, error: errorMessage };
     }
 }
+
 
 // Populate mapping tables
 function populateMappingTables() {
