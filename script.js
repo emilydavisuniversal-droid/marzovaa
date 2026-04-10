@@ -1,6 +1,6 @@
 // Webhook Configuration
 // Update this URL with your webhook endpoint
-const WEBHOOK_URL = 'https://webhook.site/b7b0f264-9279-49c9-b5a7-5e246034efee';
+const WEBHOOK_URL = 'https://comp-benchmarks.replit.app/m/melody';
 
 // CORS Proxy (optional - use if you get CORS errors)
 // You can use a CORS proxy service or set to null to disable
