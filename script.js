@@ -1,6 +1,6 @@
 // Webhook Configuration
 // Update this URL with your webhook endpoint
-const WEBHOOK_URL = 'https://webhook.site/924ad0e6-438e-4129-9189-9ea462ccfbce';
+const WEBHOOK_URL = 'https://webhook.site/cfc94156-f2a8-4b6c-83ef-9e8303316771';
 
 // CORS Proxy (optional - use if you get CORS errors)
 // You can use a CORS proxy service or set to null to disable
